@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect, useRef, useState } from 'react';
+import { CSSProperties, useState } from 'react';
 import clsx from 'clsx';
 
 import { Article } from '../article/Article';
@@ -11,23 +11,8 @@ import {
 import styles from './app.module.scss';
 
 export const App = () => {
-	const [isOpen, setIsOpen] = useState(false);
 	const [appState, setAppState] =
 		useState<ArticleStateType>(defaultArticleState);
-	const paramsRef = useRef<HTMLElement>(null);
-
-	useEffect(() => {
-		const handleMouseDown = (e: MouseEvent) => {
-			if (
-				!(paramsRef.current && paramsRef.current.contains(e.target as Node))
-			) {
-				setIsOpen(false);
-			}
-		};
-		document.addEventListener('mousedown', handleMouseDown);
-
-		return () => document.removeEventListener('mousedown', handleMouseDown);
-	}, []);
 
 	return (
 		<main
@@ -41,13 +26,7 @@ export const App = () => {
 					'--bg-color': appState.backgroundColor.value,
 				} as CSSProperties
 			}>
-			<ArticleParamsForm
-				formRef={paramsRef}
-				state={appState}
-				isOpen={isOpen}
-				setIsOpen={() => setIsOpen((prev) => !prev)}
-				applyStyle={setAppState}
-			/>
+			<ArticleParamsForm state={appState} applyStyle={setAppState} />
 			<Article />
 		</main>
 	);

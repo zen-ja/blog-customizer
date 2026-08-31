@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
 import { Select } from 'src/ui/select';
@@ -19,49 +19,42 @@ import { Separator } from 'src/ui/separator';
 import { Text } from 'src/ui/text';
 
 type ArticleParamsProps = {
-	formRef?: React.RefObject<HTMLElement> | React.RefCallback<HTMLElement>;
+	//formRef?: React.RefObject<HTMLElement> | React.RefCallback<HTMLElement>;
 	state: ArticleStateType;
-	isOpen: boolean;
-	setIsOpen: () => void;
 	applyStyle: (e: ArticleStateType) => void;
 };
 
 export const ArticleParamsForm = (props: ArticleParamsProps) => {
+	const [isOpen, setIsOpen] = useState(false);
 	const [state, setState] = useState(props.state);
+	const paramsRef = useRef<HTMLElement>(null);
 
-	function select(
-		title: string,
-		optionName: keyof ArticleStateType,
-		optionList: OptionType[]
-	) {
-		const onchange = (e: OptionType) => {
-			setState((prevState) => ({
-				...prevState,
-				[optionName]: e,
-			}));
+	useEffect(() => {
+		const handleMouseDown = (e: MouseEvent) => {
+			if (
+				!(paramsRef.current && paramsRef.current.contains(e.target as Node))
+			) {
+				setIsOpen(false);
+			}
 		};
-		return (
-			<Select
-				title={title}
-				selected={state[optionName]}
-				options={optionList}
-				onChange={onchange}
-				{...props}
-			/>
-		);
-	}
+		if (isOpen) {
+			document.addEventListener('mousedown', handleMouseDown);
+			return () => document.removeEventListener('mousedown', handleMouseDown);
+		}
+	}, [isOpen]);
+
+	const handleOnChange = (field: keyof ArticleStateType) => {
+		return (value: OptionType) => {
+			setState((prevState) => ({ ...prevState, [field]: value }));
+		};
+	};
 
 	return (
 		<>
-			<ArrowButton
-				isOpen={props.isOpen}
-				onClick={() => {
-					props.setIsOpen();
-				}}
-			/>
+			<ArrowButton isOpen={isOpen} onClick={() => setIsOpen((prev) => !prev)} />
 			<aside
-				ref={props.formRef}
-				className={props.isOpen ? styles.container_open : styles.container}>
+				ref={paramsRef}
+				className={isOpen ? styles.container_open : styles.container}>
 				<form
 					className={styles.form}
 					onSubmit={(e) => {
@@ -70,7 +63,12 @@ export const ArticleParamsForm = (props: ArticleParamsProps) => {
 					<Text size={31} weight={800} uppercase>
 						задайте параметры
 					</Text>
-					{select('шрифт', 'fontFamilyOption', fontFamilyOptions)}
+					<Select
+						title={'шрифт'}
+						selected={state.fontFamilyOption}
+						options={fontFamilyOptions}
+						onChange={handleOnChange('fontFamilyOption')}
+					/>
 					<RadioGroup
 						options={fontSizeOptions}
 						name='fontSize'
@@ -83,10 +81,25 @@ export const ArticleParamsForm = (props: ArticleParamsProps) => {
 						}}
 						title='размер шрифта'
 					/>
-					{select('цвет шрифта', 'fontColor', fontColors)}
+					<Select
+						title={'цвет шрифта'}
+						selected={state.fontColor}
+						options={fontColors}
+						onChange={handleOnChange('fontColor')}
+					/>
 					<Separator />
-					{select('цвет фона', 'backgroundColor', backgroundColors)}
-					{select('ширина контента', 'contentWidth', contentWidthArr)}
+					<Select
+						title={'цвет фона'}
+						selected={state.backgroundColor}
+						options={backgroundColors}
+						onChange={handleOnChange('backgroundColor')}
+					/>
+					<Select
+						title={'ширина контента'}
+						selected={state.contentWidth}
+						options={contentWidthArr}
+						onChange={handleOnChange('contentWidth')}
+					/>
 					<div className={styles.bottomContainer}>
 						<Button
 							title='Сбросить'
